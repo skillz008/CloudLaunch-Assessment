@@ -81,62 +81,74 @@ This project sets up **core AWS infrastructure** for the CloudLaunch initiative 
     "Version": "2012-10-17",
     "Statement": [
         {
-            "Sid": "AllowListOnAllBuckets",
+            "Sid": "ListAllBuckets",
             "Effect": "Allow",
-            "Action": "s3:ListBucket",
+            "Action": [
+                "s3:ListAllMyBuckets",
+                "s3:GetBucketLocation"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "ListSpecificBuckets",
+            "Effect": "Allow",
+            "Action": [
+                "s3:ListBucket",
+                "s3:GetBucketLocation",
+                "s3:GetBucketVersioning"
+            ],
             "Resource": [
-                "arn:aws:s3:::cloudlaunch-private-bucket",
-                "arn:aws:s3:::cloudlaunch-site-bucket",
-                "arn:aws:s3:::cloudlaunch-visible-only-bucket"
+                "arn:aws:s3:::launch-site-bucket",
+                "arn:aws:s3:::launch-private-bucket",
+                "arn:aws:s3:::launch-visible-only-bucket"
             ]
         },
         {
-            "Sid": "AllowGetPutOnPrivateBucketOnly",
+            "Sid": "PrivateBucketFullAccess",
             "Effect": "Allow",
             "Action": [
                 "s3:GetObject",
-                "s3:PutObject"
+                "s3:PutObject",
+                "s3:GetObjectVersion"
             ],
-            "Resource": "arn:aws:s3:::cloudlaunch-private-bucket/*"
-        },
-        {
-            "Sid": "AllowGetOnlyOnSiteBucket",
-            "Effect": "Allow",
-            "Action": "s3:GetObject",
-            "Resource": "arn:aws:s3:::cloudlaunch-site-bucket/*"
-        },
-        {
-            "Sid": "ExplicitDenyDeleteObject",
-            "Effect": "Deny",
-            "Action": "s3:DeleteObject",
             "Resource": [
-                "arn:aws:s3:::cloudlaunch-private-bucket/*",
-                "arn:aws:s3:::cloudlaunch-site-bucket/*",
-                "arn:aws:s3:::cloudlaunch-visible-only-bucket/*"
+                "arn:aws:s3:::launch-private-bucket/*"
             ]
         },
         {
-            "Sid": "DenyObjectAccessOnVisibleOnlyBucket",
-            "Effect": "Deny",
+            "Sid": "SiteBucketReadOnly",
+            "Effect": "Allow",
             "Action": [
                 "s3:GetObject",
-                "s3:PutObject"
+                "s3:GetObjectVersion"
             ],
-            "Resource": "arn:aws:s3:::cloudlaunch-visible-only-bucket/*"
+            "Resource": [
+                "arn:aws:s3:::launch-site-bucket/*"
+            ]
         },
         {
-            "Sid": "AllowReadOnlyVPCInfo",
+            "Sid": "DenyVisibleOnlyBucketContent",
+            "Effect": "Deny",
+            "Action": "s3:*",
+            "Resource": [
+                "arn:aws:s3:::launch-visible-only-bucket",
+                "arn:aws:s3:::launch-visible-only-bucket/*"
+            ]
+        },
+        {
+            "Sid": "VPCReadOnlyAccess",
             "Effect": "Allow",
             "Action": [
                 "ec2:DescribeVpcs",
                 "ec2:DescribeSubnets",
                 "ec2:DescribeRouteTables",
-                "ec2:DescribeSecurityGroups"
+                "ec2:DescribeSecurityGroups",
+                "ec2:DescribeInternetGateways"
             ],
             "Resource": "*",
             "Condition": {
                 "StringEquals": {
-                    "aws:ResourceTag/Name": "cloudlaunch-vpc"
+                    "ec2:Region": "us-east-1"
                 }
             }
         }
